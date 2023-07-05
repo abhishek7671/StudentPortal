@@ -17,6 +17,8 @@ JWT_ACCESS_TOKEN_EXPIRATION = 60
 JWT_REFRESH_TOKEN_EXPIRATION = 1440
 JWT_ALGORITHM = 'HS256'
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 import logging
 
 logger = logging.getLogger('django')
@@ -41,12 +43,29 @@ def get_token_for_user(user):
         'refresh': refresh_token
     }
 
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
-
+# ...
 
 class Register(APIView):
+    @swagger_auto_schema(
+        operation_description="User Registration",
+        responses={200: "User created successfully"},
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['first_name', 'last_name', 'hall_ticket', 'gender', 'school', 'password'],
+            properties={
+                'first_name': openapi.Schema(type=openapi.TYPE_STRING),
+                'last_name': openapi.Schema(type=openapi.TYPE_STRING),
+                'hall_ticket': openapi.Schema(type=openapi.TYPE_STRING),
+                'gender': openapi.Schema(type=openapi.TYPE_STRING),
+                'school': openapi.Schema(type=openapi.TYPE_STRING),
+                'password': openapi.Schema(type=openapi.TYPE_STRING, format='password'),
+            },
+        ),
+    )
     def post(self, request, format=None):
-        
         try:
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
@@ -65,7 +84,19 @@ class Register(APIView):
 
 
 
+
 class LoginView(APIView):
+    @swagger_auto_schema(
+        operation_description="User Login",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'hall_ticket': openapi.Schema(type=openapi.TYPE_STRING),
+                'password': openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=['hall_ticket', 'password'],
+        ),
+    )
     def post(self, request):
         try:
             hall_ticket = request.data.get('hall_ticket')
@@ -94,6 +125,7 @@ class LoginView(APIView):
             logger.exception('An error occurred while processing the login request')
             return Response({'error': 'An error occurred while processing the login request'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 
@@ -156,11 +188,6 @@ class MarksDetailView(APIView):
         except User.DoesNotExist:
             logger.error('User not found: %s', hall_ticket)
             return JsonResponse({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        if password != user.password:
-            logger.error('Invalid password for user: %s', hall_ticket)
-            return JsonResponse({'message': 'Invalid password'}, status=status.HTTP_401_UNAUTHORIZED)
-
         try:
             marks = Marks.objects.filter(user=user)
             serializer = MarksSerializer(marks, many=True)

@@ -16,8 +16,4 @@ urlpatterns = [
     path('highest',views.HighestMarksView.as_view()),
     path('rank',views.RankAPI.as_view()),
 
-
-
-
- 
 ]
